@@ -8,6 +8,7 @@ import describeGenerator from './methods/describe-generator'
 import { createDb, Database, migrateToLatest } from './db'
 import { FirehoseSubscription } from './subscription'
 import { AppContext, Config } from './config'
+import { IndiewebMappings } from './util/csv-mappings'
 import wellKnown from './well-known'
 
 export class FeedGenerator {
@@ -16,29 +17,41 @@ export class FeedGenerator {
   public db: Database
   public firehose: FirehoseSubscription
   public cfg: Config
+  public indiewebMappings: IndiewebMappings
 
   constructor(
     app: express.Application,
     db: Database,
     firehose: FirehoseSubscription,
     cfg: Config,
+    indiewebMappings: IndiewebMappings,
   ) {
     this.app = app
     this.db = db
     this.firehose = firehose
     this.cfg = cfg
+    this.indiewebMappings = indiewebMappings
   }
 
   static create(cfg: Config) {
     const app = express()
     const db = createDb(cfg.sqliteLocation)
-    const firehose = new FirehoseSubscription(db, cfg.subscriptionEndpoint)
 
     const didCache = new MemoryCache()
     const didResolver = new DidResolver({
       plcUrl: 'https://plc.directory',
       didCache,
     })
+
+    // Initialize IndieWeb mappings
+    const indiewebMappings = new IndiewebMappings()
+
+    const firehose = new FirehoseSubscription(
+      db,
+      cfg.subscriptionEndpoint,
+      didResolver,
+      indiewebMappings,
+    )
 
     const server = createServer({
       validateResponse: true,
@@ -58,11 +71,12 @@ export class FeedGenerator {
     app.use(server.xrpc.router)
     app.use(wellKnown(ctx))
 
-    return new FeedGenerator(app, db, firehose, cfg)
+    return new FeedGenerator(app, db, firehose, cfg, indiewebMappings)
   }
 
   async start(): Promise<http.Server> {
     await migrateToLatest(this.db)
+    await this.indiewebMappings.start()
     this.firehose.run(this.cfg.subscriptionReconnectDelay)
     this.server = this.app.listen(this.cfg.port, this.cfg.listenhost)
     await events.once(this.server, 'listening')

@@ -1,0 +1,19 @@
+# IndieWeb Handle-to-Domain Mappings
+#
+# This file maps Bluesky handles to website domains for the IndieWeb feed.
+# Use this to:
+# - Map custom handles to different domains
+# - Opt-in *.bsky.social users to the feed
+#
+# Format: handle,domain
+# - handle: Bluesky handle
+# - domain: Website domain to match in post links
+#
+# Lines starting with # are comments and will be ignored
+# Empty lines are ignored
+#
+# Example entries (uncomment and modify):
+# alice.bsky.social,myblog.com
+# bob.com,blog.example.org
+#
+handle,domain

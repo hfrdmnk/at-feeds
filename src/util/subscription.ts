@@ -1,6 +1,7 @@
 import { Subscription } from '@atproto/xrpc-server'
 import { cborToLexRecord, readCar } from '@atproto/repo'
 import { BlobRef } from '@atproto/lexicon'
+import { DidResolver } from '@atproto/identity'
 import { ids, lexicons } from '../lexicon/lexicons'
 import { Record as PostRecord } from '../lexicon/types/app/bsky/feed/post'
 import { Record as RepostRecord } from '../lexicon/types/app/bsky/feed/repost'
@@ -16,7 +17,11 @@ import { Database } from '../db'
 export abstract class FirehoseSubscriptionBase {
   public sub: Subscription<RepoEvent>
 
-  constructor(public db: Database, public service: string) {
+  constructor(
+    public db: Database,
+    public service: string,
+    public didResolver: DidResolver,
+  ) {
     this.sub = new Subscription({
       service: service,
       method: ids.ComAtprotoSyncSubscribeRepos,
